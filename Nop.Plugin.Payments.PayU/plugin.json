@@ -1,0 +1,11 @@
+﻿{
+  "Group": "Payment methods",
+  "FriendlyName": "PayU Poland",
+  "SystemName": "Payments.PayU",
+  "Version": "1.0",
+  "SupportedVersions": [ "4.10" ],
+  "Author": "Marek Łańduch",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Payments.PayU.dll",
+  "Description": "This plugin allows paying with PayU Poland"
+}
