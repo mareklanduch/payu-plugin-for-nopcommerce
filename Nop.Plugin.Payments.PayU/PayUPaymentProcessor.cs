@@ -13,6 +13,7 @@ using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Plugins;
+using Nop.Plugin.Payments.PayU.Services;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Directory;
@@ -30,24 +31,28 @@ namespace Nop.Plugin.Payments.PayU
     {
         private readonly PayUPaymentSettings _payUPaymentSettings;
         private readonly ISettingService _settingService;
+        private readonly IPayUService _payUService;
         private readonly IWebHelper _webHelper;
 
-        public bool SupportCapture => throw new NotImplementedException();
-        public bool SupportPartiallyRefund => throw new NotImplementedException();
-        public bool SupportRefund => throw new NotImplementedException();
-        public bool SupportVoid => throw new NotImplementedException();
-        public RecurringPaymentType RecurringPaymentType => throw new NotImplementedException();
-        public PaymentMethodType PaymentMethodType => throw new NotImplementedException();
-        public bool SkipPaymentInfo => throw new NotImplementedException();
-        public string PaymentMethodDescription => throw new NotImplementedException();
+        public bool SupportCapture => false;
+        public bool SupportPartiallyRefund => false;
+        public bool SupportRefund => false;
+        public bool SupportVoid => false;
+
+        public RecurringPaymentType RecurringPaymentType => RecurringPaymentType.NotSupported;
+        public PaymentMethodType PaymentMethodType => PaymentMethodType.Button;
+        public bool SkipPaymentInfo => false;
+        public string PaymentMethodDescription => "$Description for payment method$";
 
         public PayUPaymentProcessor(
             PayUPaymentSettings payUPaymentSettings,
             ISettingService settingService,
+            IPayUService payUService,
             IWebHelper webHelper)
         {
             _payUPaymentSettings = payUPaymentSettings;
             _settingService = settingService;
+            _payUService = payUService;
             _webHelper = webHelper;
         }
 
@@ -55,7 +60,9 @@ namespace Nop.Plugin.Payments.PayU
         {
             _settingService.SaveSetting(new PayUPaymentSettings()
             {
-                UseSandbox = true
+                UseSandbox = true,
+                SandboxClientId = "300746",
+                SandboxClientSecret = "2ee86a66e5d97e3fadc400c9f19b065d"
             });
 
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.UseSandbox", "Use Sandbox");
@@ -72,74 +79,94 @@ namespace Nop.Plugin.Payments.PayU
             _settingService.DeleteSetting<PayUPaymentSettings>();
             base.Uninstall();   
         }
+
         public override string GetConfigurationPageUrl()
         {
             return $"{_webHelper.GetStoreLocation()}Admin/PaymentPayU/Configure";
         }
 
+        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        {
+            return new ProcessPaymentResult();
+        }
+
         public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
         {
-            throw new NotImplementedException();
+            return new CancelRecurringPaymentResult();
         }
 
         public bool CanRePostProcessPayment(Order order)
         {
-            throw new NotImplementedException();
+            //TODO: Usually this method is used when it redirects a customer to a third-party site for completing a payment.
+            //If the third party payment fails this option will allow customers to attempt
+            //the order again later without placing a new order.
+            //CanRePostProcessPayment should return true to enable this feature.
+            return false;
         }
 
         public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
         {
-            throw new NotImplementedException();
+            //TODO: Some payment gateways allow you to authorize payments before they're captured.
+            //It allows store owners to review order details before the payment is actually done.
+            //In this case you just authorize a payment in ProcessPayment or
+            //PostProcessPayment method (described above),and then just capture it.
+            //In this case a Capture button will be visible on the order details page in admin area.
+            //Note that an order should be already authorized and SupportCapture property should returntrue.
+            return new CapturePaymentResult();
         }
 
         public decimal GetAdditionalHandlingFee(IList<ShoppingCartItem> cart)
         {
-            throw new NotImplementedException();
+            return 0;
         }
 
         public ProcessPaymentRequest GetPaymentInfo(IFormCollection form)
         {
-            throw new NotImplementedException();
+            return new ProcessPaymentRequest();
         }
 
         public string GetPublicViewComponentName()
         {
-            throw new NotImplementedException();
+            return "PaymentPayU";
         }
 
         public bool HidePaymentMethod(IList<ShoppingCartItem> cart)
         {
-            throw new NotImplementedException();
-        }
-
-        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
-        {
-            throw new NotImplementedException();
+            //TODO: Here you should redirect a customer toa third-party site for completing a payment
+            var hidePayment = false;
+            return hidePayment;
         }
 
         public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest)
         {
-            throw new NotImplementedException();
+            var tmp = _payUService.GetAuthorizationData();
+            return new ProcessPaymentResult();
         }
 
-        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
         {
-            throw new NotImplementedException();
-        }
+            //TODO: Here you should authorize in PayU by client_id and client_secret
+        }   //TODO: Here you should redirect a customer toa third-party site for completing a payment
 
         public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest)
         {
-            throw new NotImplementedException();
+            //TODO: Refund. This method allows you make a refund. In this case a Refund button will be visible
+            //on the order details page in admin area. Note that an order should be paid,
+            //and SupportRefund or SupportPartiallyRefund property should return true.
+            return new RefundPaymentResult();
         }
 
         public IList<string> ValidatePaymentForm(IFormCollection form)
         {
-            throw new NotImplementedException();
+            return new List<string>();
         }
 
         public VoidPaymentResult Void(VoidPaymentRequest voidPaymentRequest)
         {
-            throw new NotImplementedException();
+            //TODO: This method allows you void an authorized but not captured payment.
+            //In this case a Void button will be visible on the order details page in admin area.
+            //Note that an order should be authorized and SupportVoid property should return true.
+            return new VoidPaymentResult();
         }
     }
 }
