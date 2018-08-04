@@ -1,59 +1,43 @@
-using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Net.Http.Headers;
 using Nop.Core;
-using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Domain.Shipping;
 using Nop.Core.Plugins;
 using Nop.Plugin.Payments.PayU.Services;
-using Nop.Services.Common;
 using Nop.Services.Configuration;
-using Nop.Services.Directory;
 using Nop.Services.Localization;
-using Nop.Services.Orders;
 using Nop.Services.Payments;
-using Nop.Services.Tax;
 
 namespace Nop.Plugin.Payments.PayU
 {
-    /// <summary>
-    /// PayPalStandard payment processor
-    /// </summary>
     public class PayUPaymentProcessor : BasePlugin, IPaymentMethod
     {
-        private readonly PayUPaymentSettings _payUPaymentSettings;
         private readonly ISettingService _settingService;
         private readonly IPayUService _payUService;
         private readonly IWebHelper _webHelper;
+        private readonly ILocalizationService _localizationService;
 
-        public bool SupportCapture => false;
-        public bool SupportPartiallyRefund => false;
-        public bool SupportRefund => false;
-        public bool SupportVoid => false;
+        public bool SupportCapture => false; // Not imlpemented
+        public bool SupportVoid => false; // Not implemented
+        public bool SupportPartiallyRefund => true;
+        public bool SupportRefund => true;
 
         public RecurringPaymentType RecurringPaymentType => RecurringPaymentType.NotSupported;
-        public PaymentMethodType PaymentMethodType => PaymentMethodType.Button;
+        public PaymentMethodType PaymentMethodType => PaymentMethodType.Redirection;
         public bool SkipPaymentInfo => false;
-        public string PaymentMethodDescription => "$Description for payment method$";
+        public string PaymentMethodDescription =>
+            _localizationService.GetResource("Plugins.Payments.PayU.PaymentMethodDescription");
 
         public PayUPaymentProcessor(
-            PayUPaymentSettings payUPaymentSettings,
             ISettingService settingService,
             IPayUService payUService,
-            IWebHelper webHelper)
+            IWebHelper webHelper,
+            ILocalizationService localizationService)
         {
-            _payUPaymentSettings = payUPaymentSettings;
             _settingService = settingService;
             _payUService = payUService;
             _webHelper = webHelper;
+            _localizationService = localizationService;
         }
 
         public override void Install()
@@ -67,9 +51,14 @@ namespace Nop.Plugin.Payments.PayU
 
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.UseSandbox", "Use Sandbox");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientId", "Sandbox client id");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientSecret", "Sandbox client secret");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientSecret",
+                "Sandbox client secret");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientId", "Client id");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientSecret", "Client secret");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.PaymentMethodDescription",
+                "You will be redirected to PayU site to complete the payment");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.PaymentInfo",
+                "You will be redirected to PayU site to complete the order.");
 
             base.Install(); 
         }
@@ -77,6 +66,15 @@ namespace Nop.Plugin.Payments.PayU
         public override void Uninstall()
         {
             _settingService.DeleteSetting<PayUPaymentSettings>();
+
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.UseSandbox");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientId");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientSecret");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientId");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientSecret");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.PaymentMethodDescription");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.PaymentInfo");
+
             base.Uninstall();   
         }
 
@@ -85,34 +83,9 @@ namespace Nop.Plugin.Payments.PayU
             return $"{_webHelper.GetStoreLocation()}Admin/PaymentPayU/Configure";
         }
 
-        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
-        {
-            return new ProcessPaymentResult();
-        }
-
-        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
-        {
-            return new CancelRecurringPaymentResult();
-        }
-
         public bool CanRePostProcessPayment(Order order)
         {
-            //TODO: Usually this method is used when it redirects a customer to a third-party site for completing a payment.
-            //If the third party payment fails this option will allow customers to attempt
-            //the order again later without placing a new order.
-            //CanRePostProcessPayment should return true to enable this feature.
             return false;
-        }
-
-        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
-        {
-            //TODO: Some payment gateways allow you to authorize payments before they're captured.
-            //It allows store owners to review order details before the payment is actually done.
-            //In this case you just authorize a payment in ProcessPayment or
-            //PostProcessPayment method (described above),and then just capture it.
-            //In this case a Capture button will be visible on the order details page in admin area.
-            //Note that an order should be already authorized and SupportCapture property should returntrue.
-            return new CapturePaymentResult();
         }
 
         public decimal GetAdditionalHandlingFee(IList<ShoppingCartItem> cart)
@@ -132,28 +105,22 @@ namespace Nop.Plugin.Payments.PayU
 
         public bool HidePaymentMethod(IList<ShoppingCartItem> cart)
         {
-            //TODO: Here you should redirect a customer toa third-party site for completing a payment
-            var hidePayment = false;
-            return hidePayment;
+            return false;
         }
 
         public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest)
         {
-            var tmp = _payUService.GetAuthorizationData();
             return new ProcessPaymentResult();
         }
 
         public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
         {
-            //TODO: Here you should authorize in PayU by client_id and client_secret
-        }   //TODO: Here you should redirect a customer toa third-party site for completing a payment
+            _payUService.RedirectToPayUPayment(postProcessPaymentRequest);
+        }
 
         public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest)
         {
-            //TODO: Refund. This method allows you make a refund. In this case a Refund button will be visible
-            //on the order details page in admin area. Note that an order should be paid,
-            //and SupportRefund or SupportPartiallyRefund property should return true.
-            return new RefundPaymentResult();
+            return _payUService.Refund(refundPaymentRequest);
         }
 
         public IList<string> ValidatePaymentForm(IFormCollection form)
@@ -161,12 +128,24 @@ namespace Nop.Plugin.Payments.PayU
             return new List<string>();
         }
 
+        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
+        {
+            return new CapturePaymentResult();
+        }
+
         public VoidPaymentResult Void(VoidPaymentRequest voidPaymentRequest)
         {
-            //TODO: This method allows you void an authorized but not captured payment.
-            //In this case a Void button will be visible on the order details page in admin area.
-            //Note that an order should be authorized and SupportVoid property should return true.
             return new VoidPaymentResult();
+        }
+
+        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        {
+            return new ProcessPaymentResult();
+        }
+
+        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
+        {
+            return new CancelRecurringPaymentResult();
         }
     }
 }

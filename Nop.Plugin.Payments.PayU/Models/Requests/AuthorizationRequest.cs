@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace Nop.Plugin.Payments.PayU.Models
+namespace Nop.Plugin.Payments.PayU.Models.Requests
 {
-    public class AuthorizationData
+    public class AuthorizationRequest
     {
         [JsonProperty(PropertyName = "access_token")]
         public string AccessToken { get; set; }

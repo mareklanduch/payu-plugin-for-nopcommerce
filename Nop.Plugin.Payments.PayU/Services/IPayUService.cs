@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
-using Nop.Plugin.Payments.PayU.Models;
+﻿using Nop.Plugin.Payments.PayU.Models.Notifications;
+using Nop.Services.Payments;
 
 namespace Nop.Plugin.Payments.PayU.Services
 {
     public interface IPayUService
     {
-        Task<AuthorizationData> GetAuthorizationData();
+        void RedirectToPayUPayment(PostProcessPaymentRequest postProcessPaymentRequest);
+        void Notify(Notification notification);
+        RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest);
     }
 }

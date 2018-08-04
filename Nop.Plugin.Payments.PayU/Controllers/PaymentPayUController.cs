@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using Nop.Core;
 using Nop.Plugin.Payments.PayU.Models;
+using Nop.Plugin.Payments.PayU.Models.Notifications;
 using Nop.Plugin.Payments.PayU.Services;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
-using Nop.Services.Payments;
+using Nop.Services.Logging;
 using Nop.Services.Security;
 using Nop.Services.Stores;
 using Nop.Web.Framework;
@@ -20,6 +20,7 @@ namespace Nop.Plugin.Payments.PayU.Controllers
 {
     public class PaymentPayUController : BasePaymentController
     {
+        private readonly ILogger _logger;
         private readonly IStoreService _storeService;
         private readonly ISettingService _settingService;
         private readonly IPermissionService _permissionService;
@@ -28,6 +29,7 @@ namespace Nop.Plugin.Payments.PayU.Controllers
         private readonly IWorkContext _workContext;
 
         public PaymentPayUController(
+            ILogger logger,
             IStoreService storeService,
             ISettingService settingService, 
             IPermissionService permissionService,
@@ -35,6 +37,7 @@ namespace Nop.Plugin.Payments.PayU.Controllers
             IPayUService payUService,
             IWorkContext workContext)
         {
+            _logger = logger;
             _storeService = storeService;
             _settingService = settingService;
             _permissionService = permissionService;
@@ -42,8 +45,6 @@ namespace Nop.Plugin.Payments.PayU.Controllers
             _payUService = payUService;
             _workContext = workContext;
         }
-
-        #region Methods
 
         [AuthorizeAdmin]
         [Area(AreaNames.Admin)]
@@ -82,7 +83,6 @@ namespace Nop.Plugin.Payments.PayU.Controllers
             var storeScope = GetActiveStoreScopeConfiguration(_storeService, _workContext);
             var payUPaymentSettings = _settingService.LoadSetting<PayUPaymentSettings>(storeScope);
 
-            //save settings
             payUPaymentSettings.UseSandbox = model.UseSandbox;
             payUPaymentSettings.SandboxClientId = model.SandboxClientId;
             payUPaymentSettings.SandboxClientSecret = model.SandboxClientSecret;
@@ -110,6 +110,35 @@ namespace Nop.Plugin.Payments.PayU.Controllers
 
             return View("~/Plugins/Payments.PayU/Views/Configure.cshtml", model);
         }
-        #endregion
+
+        [HttpPost]
+        public async Task<IActionResult> Notify()
+        {
+            string body;
+            using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
+            {
+                 body = await reader.ReadToEndAsync();
+            }
+
+            var isRefundNotification = JObject.Parse(body)["refund"];
+            if (isRefundNotification !=  null)
+            {
+                var refundNotification = Newtonsoft.Json.JsonConvert.DeserializeObject<NotificationRefund>(body);
+                _logger.Information($"Refund notification, order extId: {refundNotification?.ExtOrderId}, order status: {refundNotification?.Refund?.Status}");
+
+                return Ok();
+            }
+
+            var notification = Newtonsoft.Json.JsonConvert.DeserializeObject<Notification>(body);
+            _logger.Information($"Notification, order extId: {notification?.OrderRequest?.ExtOrderId}, order status: {notification?.OrderRequest?.Status}");
+            _payUService.Notify(notification);
+
+            return Ok();
+        }
+
+        public IActionResult ProcessingPayment(int orderId)
+        {
+            return RedirectToRoute("CheckoutCompleted", new { orderId });
+        }
     }
 }
