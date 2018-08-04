@@ -1,68 +1,64 @@
-using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Net.Http.Headers;
 using Nop.Core;
-using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Domain.Shipping;
 using Nop.Core.Plugins;
-using Nop.Services.Common;
+using Nop.Plugin.Payments.PayU.Services;
 using Nop.Services.Configuration;
-using Nop.Services.Directory;
 using Nop.Services.Localization;
-using Nop.Services.Orders;
 using Nop.Services.Payments;
-using Nop.Services.Tax;
 
 namespace Nop.Plugin.Payments.PayU
 {
-    /// <summary>
-    /// PayPalStandard payment processor
-    /// </summary>
     public class PayUPaymentProcessor : BasePlugin, IPaymentMethod
     {
-        private readonly PayUPaymentSettings _payUPaymentSettings;
         private readonly ISettingService _settingService;
+        private readonly IPayUService _payUService;
         private readonly IWebHelper _webHelper;
+        private readonly ILocalizationService _localizationService;
 
-        public bool SupportCapture => throw new NotImplementedException();
-        public bool SupportPartiallyRefund => throw new NotImplementedException();
-        public bool SupportRefund => throw new NotImplementedException();
-        public bool SupportVoid => throw new NotImplementedException();
-        public RecurringPaymentType RecurringPaymentType => throw new NotImplementedException();
-        public PaymentMethodType PaymentMethodType => throw new NotImplementedException();
-        public bool SkipPaymentInfo => throw new NotImplementedException();
-        public string PaymentMethodDescription => throw new NotImplementedException();
+        public bool SupportCapture => false; // Not imlpemented
+        public bool SupportVoid => false; // Not implemented
+        public bool SupportPartiallyRefund => true;
+        public bool SupportRefund => true;
+
+        public RecurringPaymentType RecurringPaymentType => RecurringPaymentType.NotSupported;
+        public PaymentMethodType PaymentMethodType => PaymentMethodType.Redirection;
+        public bool SkipPaymentInfo => false;
+        public string PaymentMethodDescription =>
+            _localizationService.GetResource("Plugins.Payments.PayU.PaymentMethodDescription");
 
         public PayUPaymentProcessor(
-            PayUPaymentSettings payUPaymentSettings,
             ISettingService settingService,
-            IWebHelper webHelper)
+            IPayUService payUService,
+            IWebHelper webHelper,
+            ILocalizationService localizationService)
         {
-            _payUPaymentSettings = payUPaymentSettings;
             _settingService = settingService;
+            _payUService = payUService;
             _webHelper = webHelper;
+            _localizationService = localizationService;
         }
 
         public override void Install()
         {
             _settingService.SaveSetting(new PayUPaymentSettings()
             {
-                UseSandbox = true
+                UseSandbox = true,
+                SandboxClientId = "300746",
+                SandboxClientSecret = "2ee86a66e5d97e3fadc400c9f19b065d"
             });
 
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.UseSandbox", "Use Sandbox");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientId", "Sandbox client id");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientSecret", "Sandbox client secret");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientSecret",
+                "Sandbox client secret");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientId", "Client id");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientSecret", "Client secret");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.PaymentMethodDescription",
+                "You will be redirected to PayU site to complete the payment");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.PaymentInfo",
+                "You will be redirected to PayU site to complete the order.");
 
             base.Install(); 
         }
@@ -70,76 +66,86 @@ namespace Nop.Plugin.Payments.PayU
         public override void Uninstall()
         {
             _settingService.DeleteSetting<PayUPaymentSettings>();
+
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.UseSandbox");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientId");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientSecret");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientId");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientSecret");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.PaymentMethodDescription");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.PaymentInfo");
+
             base.Uninstall();   
         }
+
         public override string GetConfigurationPageUrl()
         {
             return $"{_webHelper.GetStoreLocation()}Admin/PaymentPayU/Configure";
         }
 
-        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
-        {
-            throw new NotImplementedException();
-        }
-
         public bool CanRePostProcessPayment(Order order)
         {
-            throw new NotImplementedException();
-        }
-
-        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
-        {
-            throw new NotImplementedException();
+            return false;
         }
 
         public decimal GetAdditionalHandlingFee(IList<ShoppingCartItem> cart)
         {
-            throw new NotImplementedException();
+            return 0;
         }
 
         public ProcessPaymentRequest GetPaymentInfo(IFormCollection form)
         {
-            throw new NotImplementedException();
+            return new ProcessPaymentRequest();
         }
 
         public string GetPublicViewComponentName()
         {
-            throw new NotImplementedException();
+            return "PaymentPayU";
         }
 
         public bool HidePaymentMethod(IList<ShoppingCartItem> cart)
         {
-            throw new NotImplementedException();
-        }
-
-        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
-        {
-            throw new NotImplementedException();
+            return false;
         }
 
         public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest)
         {
-            throw new NotImplementedException();
+            return new ProcessPaymentResult();
         }
 
-        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
         {
-            throw new NotImplementedException();
+            _payUService.RedirectToPayUPayment(postProcessPaymentRequest);
         }
 
         public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest)
         {
-            throw new NotImplementedException();
+            return _payUService.Refund(refundPaymentRequest);
         }
 
         public IList<string> ValidatePaymentForm(IFormCollection form)
         {
-            throw new NotImplementedException();
+            return new List<string>();
+        }
+
+        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
+        {
+            return new CapturePaymentResult();
         }
 
         public VoidPaymentResult Void(VoidPaymentRequest voidPaymentRequest)
         {
-            throw new NotImplementedException();
+            return new VoidPaymentResult();
+        }
+
+        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        {
+            return new ProcessPaymentResult();
+        }
+
+        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
+        {
+            return new CancelRecurringPaymentResult();
         }
     }
 }
