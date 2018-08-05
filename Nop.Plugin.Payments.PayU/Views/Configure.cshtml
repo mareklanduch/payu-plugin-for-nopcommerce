@@ -42,6 +42,16 @@
                 </div>
                 <div class="form-group">
                     <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="SandboxSecondKeyOverrideForStore" asp-input="SandboxSecondKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="SandboxSecondKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="SandboxSecondKey" />
+                        <span asp-validation-for="SandboxSecondKey"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
                         <nop-override-store-checkbox asp-for="ClientIdOverrideForStore" asp-input="ClientId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                         <nop-label asp-for="ClientId" />
                     </div>
@@ -58,6 +68,16 @@
                     <div class="col-md-9">
                         <nop-editor asp-for="ClientSecret" />
                         <span asp-validation-for="ClientSecret"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="SecondKeyOverrideForStore" asp-input="SecondKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="SecondKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="SecondKey" />
+                        <span asp-validation-for="SecondKey"></span>
                     </div>
                 </div>
                 <div class="form-group">

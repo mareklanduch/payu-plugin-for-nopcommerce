@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Nop.Core;
@@ -41,6 +43,10 @@ namespace Nop.Plugin.Payments.PayU.Services
         private string ClientSecret => _payUPaymentSettings.UseSandbox
             ? _payUPaymentSettings.SandboxClientSecret
             : _payUPaymentSettings.ClientSecret;
+
+        private string SecondKey => _payUPaymentSettings.UseSandbox
+            ? _payUPaymentSettings.SandboxSecondKey
+            : _payUPaymentSettings.SecondKey;
 
         public PayUService(
             ILogger logger,
@@ -91,7 +97,7 @@ namespace Nop.Plugin.Payments.PayU.Services
 
         public void Notify(Notification notification)
         {
-            if (!int.TryParse(notification.OrderRequest.ExtOrderId, out var orderId))
+            if (!int.TryParse(notification.Order.ExtOrderId, out var orderId))
             {
                 return;
             }
@@ -102,7 +108,7 @@ namespace Nop.Plugin.Payments.PayU.Services
                 return;
             }
 
-            switch (notification.OrderRequest.Status.ToUpperInvariant())
+            switch (notification.Order.Status.ToUpperInvariant())
             {
                 case "PENDING":
                     OrderPending(order);
@@ -151,6 +157,21 @@ namespace Nop.Plugin.Payments.PayU.Services
                     return RefundResult((int)response.StatusCode, refundPaymentRequest.IsPartialRefund);
                 }
             }
+        }
+
+        public bool VerifySignature(string body)
+        {
+            var openPayUSignature = _httpContextAccessor.HttpContext.Request.Headers["OpenPayu-Signature"].ToString();
+
+            var signatureMatch = Regex.Match(openPayUSignature, "(signature=)([A-z,0-9]*)");
+            var signature = signatureMatch.Groups[2].Value;
+
+            var algorithmMatch = Regex.Match(openPayUSignature, "(algorithm=)([A-z,0-9,-]*)");
+            var algorithm = algorithmMatch.Groups[2].Value;
+
+            var verifyHash = GenerateHash(algorithm, body + SecondKey);
+
+            return verifyHash == signature.ToLower();
         }
 
         private AuthorizationRequest GetAuthorizationData()
@@ -243,7 +264,7 @@ namespace Nop.Plugin.Payments.PayU.Services
 
         private void OrderCompleted(Notification notification, Order order)
         {
-            if (!decimal.TryParse(notification?.OrderRequest?.TotalAmount, out var totalAmount))
+            if (!decimal.TryParse(notification?.Order?.TotalAmount, out var totalAmount))
             {
                 return;
             }
@@ -257,7 +278,7 @@ namespace Nop.Plugin.Payments.PayU.Services
             {
                 if (_orderProcessingService.CanMarkOrderAsPaid(order))
                 {
-                    order.CaptureTransactionId = notification?.OrderRequest?.OrderId;
+                    order.CaptureTransactionId = notification?.Order?.OrderId;
 
                     order.OrderNotes.Add(new OrderNote
                     {
@@ -273,7 +294,7 @@ namespace Nop.Plugin.Payments.PayU.Services
             else
             {
                 var error =
-                    $"PayU order id {notification?.OrderRequest?.OrderId}. Order id {order.Id}. PayU returned order total {totalAmount}. Order total should be equal to {order.OrderTotal}.";
+                    $"PayU order id {notification?.Order?.OrderId}. Order id {order.Id}. PayU returned order total {totalAmount}. Order total should be equal to {order.OrderTotal}.";
                 
                 _logger.Error(error);
 
@@ -377,6 +398,25 @@ namespace Nop.Plugin.Payments.PayU.Services
             var refundJson = JsonConvert.SerializeObject(refundData);
 
             return new StringContent(refundJson, Encoding.UTF8, "application/json");
+        }
+
+        private string GenerateHash(string hashName, string input)
+        {
+            switch (hashName.ToLowerInvariant())
+            {
+                case "md5":
+                    return input.ConvertToMd5();
+                case "sha-256":
+                    return input.ConvertToSha256();
+                case "sha-384":
+                    return input.ConvertToSha384();
+                case "sha-512":
+                    return input.ConvertToSha512();
+                default:
+                    var error = $"Hash name: {hashName}. This hash is not supported.";
+                    _logger.Error(error);
+                    throw new Exception(error);
+            }
         }
     }
 }
