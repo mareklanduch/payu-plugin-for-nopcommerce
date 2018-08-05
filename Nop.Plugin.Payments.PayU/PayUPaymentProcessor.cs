@@ -46,15 +46,19 @@ namespace Nop.Plugin.Payments.PayU
             {
                 UseSandbox = true,
                 SandboxClientId = "300746",
-                SandboxClientSecret = "2ee86a66e5d97e3fadc400c9f19b065d"
+                SandboxClientSecret = "2ee86a66e5d97e3fadc400c9f19b065d",
+                SandboxSecondKey = "b6ca15b0d1020e8094d9b5f8d163db54"
             });
 
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.UseSandbox", "Use Sandbox");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientId", "Sandbox client id");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientSecret",
                 "Sandbox client secret");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxSecondKey",
+                "Sandbox second key");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientId", "Client id");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientSecret", "Client secret");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.Fields.SecondKey", "Second key");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.PaymentMethodDescription",
                 "You will be redirected to PayU site to complete the payment");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.PayU.PaymentInfo",
@@ -70,8 +74,11 @@ namespace Nop.Plugin.Payments.PayU
             this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.UseSandbox");
             this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientId");
             this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxClientSecret");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.SandboxSecondKey");
             this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientId");
             this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.ClientSecret");
+            this.DeletePluginLocaleResource("Plugins.Payments.PayU.Fields.SecondKey");
+
             this.DeletePluginLocaleResource("Plugins.Payments.PayU.PaymentMethodDescription");
             this.DeletePluginLocaleResource("Plugins.Payments.PayU.PaymentInfo");
 

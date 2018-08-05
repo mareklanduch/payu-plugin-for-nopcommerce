@@ -4,13 +4,15 @@
     <Copyright>Copyright © Sharpapp Marek Łańduch</Copyright>
     <Company>Sharpapp Marek Łańduch</Company>
     <Authors>Sharpapp Marek Łańduch</Authors>
-    <Version>1.0</Version>
-    <Description>This plugin allows paying with PayU Poland</Description>
+    <Version>1.1</Version>
+    <Description>NopCommerce payment plugin PayU Poland</Description>
     <PackageLicenseUrl>
     </PackageLicenseUrl>
     <PackageProjectUrl>http://www.sharpapp.net</PackageProjectUrl>
-    <RepositoryUrl></RepositoryUrl>
+    <RepositoryUrl>https://github.com/sharpapp-mareklanduch/payu-plugin-for-nopcommerce</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
+    <NeutralLanguage></NeutralLanguage>
+    <PackageTags />
  </PropertyGroup>  
  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
    <OutputPath>..\..\Presentation\Nop.Web\Plugins\Payments.PayU</OutputPath>

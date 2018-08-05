@@ -8,5 +8,6 @@ namespace Nop.Plugin.Payments.PayU.Services
         void RedirectToPayUPayment(PostProcessPaymentRequest postProcessPaymentRequest);
         void Notify(Notification notification);
         RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest);
+        bool VerifySignature(string body);
     }
 }

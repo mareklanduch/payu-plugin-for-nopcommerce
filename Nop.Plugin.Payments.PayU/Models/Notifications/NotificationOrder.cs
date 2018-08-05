@@ -3,7 +3,7 @@ using Nop.Plugin.Payments.PayU.Models.Requests;
 
 namespace Nop.Plugin.Payments.PayU.Models.Notifications
 {
-    public class NotificationOrderRequest : OrderRequest
+    public class NotificationOrder : OrderRequest
     {
         [JsonProperty(PropertyName = "orderId")]
         public string OrderId { get; set; }

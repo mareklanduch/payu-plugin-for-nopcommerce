@@ -2,10 +2,10 @@
   "Group": "Payment methods",
   "FriendlyName": "PayU Poland",
   "SystemName": "Payments.PayU",
-  "Version": "1.0",
+  "Version": "1.1",
   "SupportedVersions": [ "4.10" ],
-  "Author": "Marek Łańduch",
+  "Author": "Sharpapp Marek Łańduch",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Payments.PayU.dll",
-  "Description": "This plugin allows paying with PayU Poland"
+  "Description": "NopCommerce payment plugin PayU Poland"
 }

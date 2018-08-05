@@ -6,7 +6,7 @@ namespace Nop.Plugin.Payments.PayU.Models.Notifications
     public class Notification
     {
         [JsonProperty(PropertyName = "order")]
-        public NotificationOrderRequest OrderRequest { get; set; }
+        public NotificationOrder Order { get; set; }
 
         [JsonProperty(PropertyName = "localReceiptDateTime")]
         public string LocalReceiptDateTime { get; set; }

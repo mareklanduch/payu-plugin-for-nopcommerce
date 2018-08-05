@@ -1,5 +1,8 @@
 ﻿using System.IO;
+using System.Security;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
@@ -86,8 +89,11 @@ namespace Nop.Plugin.Payments.PayU.Controllers
             payUPaymentSettings.UseSandbox = model.UseSandbox;
             payUPaymentSettings.SandboxClientId = model.SandboxClientId;
             payUPaymentSettings.SandboxClientSecret = model.SandboxClientSecret;
+            payUPaymentSettings.SandboxSecondKey = model.SandboxSecondKey;
+
             payUPaymentSettings.ClientId = model.ClientId;
-            payUPaymentSettings.ClientSecret= model.ClientSecret;
+            payUPaymentSettings.ClientSecret = model.ClientSecret;
+            payUPaymentSettings.SecondKey = model.SecondKey;
 
             _settingService.SaveSettingOverridablePerStore(payUPaymentSettings,
                 x => x.UseSandbox, model.UseSandboxOverrideForStore, storeScope, false);
@@ -99,10 +105,16 @@ namespace Nop.Plugin.Payments.PayU.Controllers
                 x => x.SandboxClientSecret, model.SandboxClientSecretOverrideForStore, storeScope, false);
 
             _settingService.SaveSettingOverridablePerStore(payUPaymentSettings,
+                x => x.SandboxSecondKey, model.SandboxSecondKeyOverrideForStore, storeScope, false);
+
+            _settingService.SaveSettingOverridablePerStore(payUPaymentSettings,
                 x => x.ClientId, model.ClientIdOverrideForStore, storeScope, false);
 
             _settingService.SaveSettingOverridablePerStore(payUPaymentSettings,
                 x => x.ClientSecret, model.ClientSecretOverrideForStore, storeScope, false);
+
+            _settingService.SaveSettingOverridablePerStore(payUPaymentSettings,
+                x => x.SecondKey, model.SecondKeyOverrideForStore, storeScope, false);
 
             _settingService.ClearCache();
 
@@ -117,7 +129,15 @@ namespace Nop.Plugin.Payments.PayU.Controllers
             string body;
             using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
             {
-                 body = await reader.ReadToEndAsync();
+                body = await reader.ReadToEndAsync();
+            }
+
+            var verifySignature = _payUService.VerifySignature(body);
+
+            if (!verifySignature)
+            {
+                _logger.Error($"PayU signature error. Body {body}. OpenPayU-Signature: {Request.Headers["OpenPayu-Signature"]}");
+                return Ok();
             }
 
             var isRefundNotification = JObject.Parse(body)["refund"];
@@ -130,7 +150,7 @@ namespace Nop.Plugin.Payments.PayU.Controllers
             }
 
             var notification = Newtonsoft.Json.JsonConvert.DeserializeObject<Notification>(body);
-            _logger.Information($"Notification, order extId: {notification?.OrderRequest?.ExtOrderId}, order status: {notification?.OrderRequest?.Status}");
+            _logger.Information($"Notification, order extId: {notification?.Order?.ExtOrderId}, order status: {notification?.Order?.Status}");
             _payUService.Notify(notification);
 
             return Ok();
