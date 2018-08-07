@@ -7,6 +7,7 @@
     <PackageProjectUrl>http://www.sharpapp.net</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sharpapp-mareklanduch/payu-plugin-for-nopcommerce</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
+    <Version>1.2.0</Version>
  </PropertyGroup>  
 
  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
