@@ -11,7 +11,7 @@ NopCommerce v. 4.10
 ### Installing
 
 Plugin zip file can be downloaded here
-[Payments.PayU.zip v. 1.1](http://www.sharpapp.net/download/1.1/Payments.PayU.zip).
+[Payments.PayU.zip v. 1.2](http://www.sharpapp.net/download/1.2/Payments.PayU.zip).
 
 You can install the plugin the same way as other plugins in nopcommerce.
 
