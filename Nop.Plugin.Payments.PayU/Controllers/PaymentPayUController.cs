@@ -1,8 +1,5 @@
 ﻿using System.IO;
-using System.Security;
-using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
@@ -24,12 +21,11 @@ namespace Nop.Plugin.Payments.PayU.Controllers
     public class PaymentPayUController : BasePaymentController
     {
         private readonly ILogger _logger;
-        private readonly IStoreService _storeService;
         private readonly ISettingService _settingService;
         private readonly IPermissionService _permissionService;
         private readonly ILocalizationService _localizationService;
         private readonly IPayUService _payUService;
-        private readonly IWorkContext _workContext;
+        private readonly IStoreContext _storeContext;
 
         public PaymentPayUController(
             ILogger logger,
@@ -38,22 +34,22 @@ namespace Nop.Plugin.Payments.PayU.Controllers
             IPermissionService permissionService,
             ILocalizationService localizationService,
             IPayUService payUService,
-            IWorkContext workContext)
+            IWorkContext workContext,
+            IStoreContext storeContext)
         {
             _logger = logger;
-            _storeService = storeService;
             _settingService = settingService;
             _permissionService = permissionService;
             _localizationService = localizationService;
             _payUService = payUService;
-            _workContext = workContext;
+            _storeContext = storeContext;
         }
 
         [AuthorizeAdmin]
         [Area(AreaNames.Admin)]
         public IActionResult Configure()
         {
-            var storeScope = GetActiveStoreScopeConfiguration(_storeService, _workContext);
+            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
             var payUPaymentSettings = _settingService.LoadSetting<PayUPaymentSettings>(storeScope);
 
             var model = new ConfigurationModel()
@@ -83,7 +79,7 @@ namespace Nop.Plugin.Payments.PayU.Controllers
             if (!ModelState.IsValid)
                 return View("~/Plugins/Payments.PayU/Views/Configure.cshtml", model);
 
-            var storeScope = GetActiveStoreScopeConfiguration(_storeService, _workContext);
+            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
             var payUPaymentSettings = _settingService.LoadSetting<PayUPaymentSettings>(storeScope);
 
             payUPaymentSettings.UseSandbox = model.UseSandbox;
