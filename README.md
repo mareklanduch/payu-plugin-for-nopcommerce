@@ -1,3 +1,4 @@
+:warning::warning::warning: Keep in mind plugin has been developed years ago and it might not work with current PayU api :warning::warning::warning:
 # payu-plugin-for-nopcommerce
 
 PayU Poland plugin for nopcommerce
@@ -25,7 +26,6 @@ After Congiuration remember to active payment method in Configuration -> Payment
 
 1. Redirect payment 
 2. Refund and partial refund
-3. ~~Capture payments~~ (soon) 
 
 ## Issues
 
